@@ -46,23 +46,7 @@ export const useAuthStore = create((set) => ({
   login: async (email, password) => {
     set({ isLoading: true, error: null });
 
-    // DEMO LOGIN LOGIC FOR COMPETITION
-    const demoRoles = ['worker', 'advocate', 'verifier', 'admin'];
-    const lowerEmail = email.toLowerCase();
-    const matchedRole = demoRoles.find(role => lowerEmail === `${role}@demo.com`);
-
-    if (matchedRole) {
-      const demoUser = {
-        id: 'demo-' + Date.now(),
-        full_name: `Demo ${matchedRole.charAt(0).toUpperCase() + matchedRole.slice(1)}`,
-        email: email,
-        role: matchedRole.toUpperCase()
-      };
-      localStorage.setItem('access_token', `demo_${matchedRole}`);
-      set({ user: demoUser, isAuthenticated: true, isLoading: false, error: null });
-      return { success: true, role: matchedRole.toUpperCase() };
-    }
-
+    // Try Real Backend First
     try {
       const response = await api.post('/api/auth/signin', { email, password });
       const { access_token, refresh_token } = response.data;
@@ -70,25 +54,46 @@ export const useAuthStore = create((set) => ({
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       
-      const userRes = await api.get('/api/auth/me', {
-        headers: { Authorization: `Bearer ${access_token}` }
-      });
-      
+      const userRes = await api.get('/api/auth/me');
       set({ user: userRes.data, isAuthenticated: true, isLoading: false });
       return { success: true, role: userRes.data.role };
     } catch (error) {
+      // Fallback to DEMO LOGIN if specific demo emails are used
+      const demoRoles = ['worker', 'advocate', 'verifier', 'admin'];
+      const lowerEmail = email.toLowerCase();
+      const matchedRole = demoRoles.find(role => lowerEmail === `${role}@demo.com`);
+
+      if (matchedRole) {
+        const demoUser = {
+          id: 'demo-' + Date.now(),
+          full_name: `Demo ${matchedRole.charAt(0).toUpperCase() + matchedRole.slice(1)}`,
+          email: email,
+          role: matchedRole.toUpperCase()
+        };
+        localStorage.setItem('access_token', `demo_${matchedRole}`);
+        set({ user: demoUser, isAuthenticated: true, isLoading: false, error: null });
+        return { success: true, role: matchedRole.toUpperCase() };
+      }
+
       set({ 
         error: error.response?.data?.detail || 'Invalid email or password', 
         isLoading: false 
       });
-      return { success: false, error: error.response?.data?.detail };
+      return { success: false, error: error.response?.data?.detail || 'Connection failed' };
     }
   },
 
   register: async (data) => {
     set({ isLoading: true, error: null });
     try {
-      await api.post('/api/auth/signup', data);
+      // Map frontend fields to backend expected: { name, email, password, confirm_password }
+      const payload = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        confirm_password: data.confirm_password
+      };
+      await api.post('/api/auth/signup', payload);
       set({ isLoading: false });
       return { success: true };
     } catch (error) {
@@ -104,15 +109,32 @@ export const useAuthStore = create((set) => ({
     set({ isLoading: true });
     try {
       const token = localStorage.getItem('access_token');
-      if (!token?.startsWith('demo_')) {
+      if (token && !token.startsWith('demo_')) {
         await api.post('/api/auth/signout');
       }
     } catch (error) {
       console.error('Logout error', error);
     } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      localStorage.clear();
       set({ user: null, isAuthenticated: false, isLoading: false });
+    }
+  },
+  
+  forgotPassword: async (email) => {
+    try {
+      await api.post('/api/auth/forgot-password', { email });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.detail };
+    }
+  },
+
+  resetPassword: async (token, new_password, confirm_password) => {
+    try {
+      await api.post('/api/auth/reset-password', { token, new_password, confirm_password });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.detail };
     }
   },
   

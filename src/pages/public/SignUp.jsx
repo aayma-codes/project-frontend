@@ -13,9 +13,16 @@ export default function SignUp() {
   const { register, handleSubmit, formState: { errors }, watch } = useForm();
   
   const onSubmit = async (data) => {
-    const response = await registerAuth(data);
+    // Teammate's backend expects: { name, email, password, confirm_password }
+    const response = await registerAuth({
+      name: data.full_name, // Mapping full_name from form to name for API
+      email: data.email,
+      password: data.password,
+      confirm_password: data.confirm_password
+    });
+
     if (response.success) {
-      toast.success('Account created! Please sign in.');
+      toast.success('Verification email sent! Please check your inbox.', { duration: 5000 });
       navigate('/signin');
     } else {
       toast.error(response.error || 'Registration failed');

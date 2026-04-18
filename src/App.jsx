@@ -44,7 +44,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, isAuthenticated, isLoading } = useAuthStore();
   const location = useLocation();
 
-  if (isLoading) return null; // Wait for checkAuth
+  if (isLoading) return null;
 
   if (!isAuthenticated) {
     return <Navigate to="/signin" state={{ from: location }} replace />;
@@ -55,6 +55,18 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   return children;
+};
+
+const DashboardRedirect = () => {
+  const { user } = useAuthStore();
+  const role = user?.role?.toLowerCase();
+  
+  if (role === 'worker') return <Navigate to="/worker/dashboard" replace />;
+  if (role === 'verifier') return <Navigate to="/verifier/dashboard" replace />;
+  if (role === 'advocate') return <Navigate to="/advocate/dashboard" replace />;
+  if (role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+  
+  return <Navigate to="/" replace />;
 };
 
 function App() {
@@ -94,7 +106,11 @@ function App() {
 
         {/* Protected Dashboard Routes */}
         <Route element={<DashboardLayout />}>
-          
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <DashboardRedirect />
+            </ProtectedRoute>
+          } />
           {/* Worker Routes */}
           <Route path="/worker/dashboard" element={<ProtectedRoute allowedRoles={['WORKER', 'ADMIN']}><WorkerDashboard /></ProtectedRoute>} />
           <Route path="/worker/earnings/add" element={<ProtectedRoute allowedRoles={['WORKER', 'ADMIN']}><AddEarnings /></ProtectedRoute>} />

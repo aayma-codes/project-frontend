@@ -98,17 +98,19 @@ InDrive,2026-04-17,4,3000,600,2400,Rainy day`;
     URL.revokeObjectURL(url);
   };
 
-  const handleCSVImport = async () => {
-    const validRows = csvRows.filter(r => r._valid);
-    if (!validRows.length) { toast.error('No valid rows to import.'); return; }
+  const handleCSVImport = async (file) => {
+    if (!file) { toast.error('No file selected.'); return; }
     setCsvImporting(true);
     try {
-      // In real app: await api.post('/api/earnings/bulk', { logs: validRows })
-      await new Promise(r => setTimeout(r, 1200)); // Simulate API
-      toast.success(`${validRows.length} shifts imported successfully!`);
+      const formData = new FormData();
+      formData.append('file', file);
+      await api.post('/api/earnings/import-csv', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success('CSV imported successfully!');
       navigate('/worker/earnings/history');
-    } catch {
-      toast.error('Import failed. Please try again.');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Import failed. Please try again.');
     } finally {
       setCsvImporting(false);
     }
@@ -117,19 +119,32 @@ InDrive,2026-04-17,4,3000,600,2400,Rainy day`;
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      await api.post('/api/earnings/logs', {
-        platform: data.platform, date: data.date,
+      // 1. Create the earnings log
+      const response = await api.post('/api/earnings/logs', {
+        platform: data.platform, 
+        date: data.date,
         hours_worked: parseFloat(data.hours_worked),
         gross_earned: parseFloat(data.gross_earned),
         platform_deductions: parseFloat(data.platform_deductions),
         net_received: parseFloat(data.net_received),
         notes: data.notes
       });
+      
+      const logId = response.data.id;
+
+      // 2. Upload screenshot if selected
+      if (screenshotFile && logId) {
+        const formData = new FormData();
+        formData.append('file', screenshotFile);
+        await api.post(`/api/earnings/logs/${logId}/screenshots`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      }
+
       toast.success('Earnings added successfully!');
       navigate('/worker/earnings/history');
-    } catch {
-      toast.success('Earnings logged! (Demo mode)');
-      navigate('/worker/earnings/history');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save earnings. Please try again.');
     } finally {
       setIsLoading(false);
     }

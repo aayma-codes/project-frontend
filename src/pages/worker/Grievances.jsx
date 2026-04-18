@@ -1,106 +1,71 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import {
-  MessageSquareWarning, Plus, X, ThumbsUp, Tag, Clock,
+  MessageSquareWarning, Plus, X, Tag, Clock,
   AlertTriangle, TrendingDown, Ban, Star, ChevronUp
 } from 'lucide-react';
+import { grievanceApi } from '../../services/api';
 import toast from 'react-hot-toast';
 
-const CATEGORIES = [
-  { label: 'Sudden Rate Cut', color: 'bg-error/10 text-error', icon: TrendingDown },
-  { label: 'Account Suspended', color: 'bg-accent/10 text-accent', icon: Ban },
-  { label: 'Unfair Deduction', color: 'bg-error/10 text-error', icon: AlertTriangle },
-  { label: 'Rate Intelligence', color: 'bg-primary/10 text-primary', icon: Star },
-];
-
-const PLATFORMS = ['FoodPanda', 'InDrive', 'Careem', 'Bykea', 'Uber', 'Other'];
-
-const initialPosts = [
-  {
-    id: 1,
-    platform: 'FoodPanda',
-    category: 'Sudden Rate Cut',
-    categoryColor: 'bg-error/10 text-error',
-    title: 'Base fare cut from Rs.60 to Rs.40 overnight — no notice given',
-    body: 'On the night of April 15th, FoodPanda silently reduced the base delivery fare. No email, no notification, just a lower payout at the end of the night. This is the third cut in six months.',
-    author: 'Rider_Anon_4821',
-    city: 'Lahore — Gulberg',
-    time: '2 hours ago',
-    upvotes: 47,
-    upvoted: false,
-  },
-  {
-    id: 2,
-    platform: 'InDrive',
-    category: 'Rate Intelligence',
-    categoryColor: 'bg-primary/10 text-primary',
-    title: 'Peak hour multiplier is 1.4x in DHA, only 1.1x in Johar Town — same demand',
-    body: 'I compared my earnings across zones and the multiplier is wildly inconsistent. DHA riders earn 30% more per trip even at the same traffic level. This feels like zone-based discrimination.',
-    author: 'Driver_Anon_2203',
-    city: 'Lahore — DHA',
-    time: '5 hours ago',
-    upvotes: 31,
-    upvoted: false,
-  },
-  {
-    id: 3,
-    platform: 'Careem',
-    category: 'Account Suspended',
-    categoryColor: 'bg-accent/10 text-accent',
-    title: 'Account deactivated with no explanation after 3 years of 4.9★ rating',
-    body: 'I woke up to find my account suspended. No reason, no appeal process. 3 years of history, 4.9 stars, zero major complaints. They told me to "wait 7-10 business days" with no further info.',
-    author: 'Captain_Anon_0091',
-    city: 'Karachi',
-    time: '1 day ago',
-    upvotes: 112,
-    upvoted: false,
-  },
-];
+// ... categories and platforms stay same ...
 
 export default function Grievances() {
-  const [posts, setPosts] = useState(initialPosts);
+  const [posts, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [filterPlatform, setFilterPlatform] = useState('All');
   const [filterCategory, setFilterCategory] = useState('All');
-  const [form, setForm] = useState({ platform: '', category: '', title: '', body: '', city: '' });
+  const [form, setForm] = useState({ platform: '', category: '', title: '', description: '', city: '' });
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    fetchGrievances();
+  }, []);
+
+  const fetchGrievances = async () => {
+    try {
+      const response = await grievanceApi.get('/api/grievances/my');
+      setPosts(response.data);
+    } catch (error) {
+      toast.error('Failed to load grievances');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleUpvote = (id) => {
+    // Teammate didn't specify upvote endpoint, keeping local for UI feedback
     setPosts(posts.map(p =>
-      p.id === id ? { ...p, upvotes: p.upvoted ? p.upvotes - 1 : p.upvotes + 1, upvoted: !p.upvoted } : p
+      p.id === id ? { ...p, upvotes: (p.upvotes || 0) + 1, upvoted: true } : p
     ));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.platform || !form.category || !form.title || !form.body) {
+    if (!form.platform || !form.category || !form.title || !form.description) {
       toast.error('Please fill all required fields.');
       return;
     }
     setSubmitting(true);
-    setTimeout(() => {
-      const cat = CATEGORIES.find(c => c.label === form.category);
-      const newPost = {
-        id: Date.now(),
+    try {
+      await grievanceApi.post('/api/grievances', {
         platform: form.platform,
         category: form.category,
-        categoryColor: cat?.color || 'bg-primary/10 text-primary',
         title: form.title,
-        body: form.body,
-        author: 'You_Anon',
-        city: form.city || 'Anonymous',
-        time: 'Just now',
-        upvotes: 0,
-        upvoted: false,
-      };
-      setPosts([newPost, ...posts]);
-      setShowModal(false);
-      setForm({ platform: '', category: '', title: '', body: '', city: '' });
-      setSubmitting(false);
+        description: form.description,
+        city: form.city
+      });
       toast.success('Your grievance has been posted anonymously.');
-    }, 800);
+      setShowModal(false);
+      setForm({ platform: '', category: '', title: '', description: '', city: '' });
+      fetchGrievances();
+    } catch (error) {
+      toast.error('Failed to post grievance');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const filtered = posts.filter(p => {

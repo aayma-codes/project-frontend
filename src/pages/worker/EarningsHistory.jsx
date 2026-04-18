@@ -1,23 +1,31 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useReactTable, getCoreRowModel, flexRender, getPaginationRowModel, getFilteredRowModel } from '@tanstack/react-table';
-import { FileDown, Search, Filter, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
-
-// Mock Data
-const mockData = [
-  { id: '101', platform: 'FoodPanda', date: '2026-04-18', hours: 5, gross: 3200, ded: 400, net: 2800, status: 'verified' },
-  { id: '102', platform: 'InDrive', date: '2026-04-17', hours: 4, gross: 3000, ded: 600, net: 2400, status: 'pending' },
-  { id: '103', platform: 'FoodPanda', date: '2026-04-16', hours: 6, gross: 3500, ded: 400, net: 3100, status: 'verified' },
-  { id: '104', platform: 'Bykea', date: '2026-04-15', hours: 3, gross: 1800, ded: 300, net: 1500, status: 'disputed' },
-  { id: '105', platform: 'Uber', date: '2026-04-14', hours: 8, gross: 5000, ded: 1200, net: 3800, status: 'verified' },
-  { id: '106', platform: 'FoodPanda', date: '2026-04-13', hours: 5, gross: 3100, ded: 400, net: 2700, status: 'verified' },
-  { id: '107', platform: 'Careem', date: '2026-04-12', hours: 4, gross: 2500, ded: 500, net: 2000, status: 'pending' },
-];
+import { FileDown, Search, Filter, CheckCircle2, AlertCircle, Clock, HelpCircle } from 'lucide-react';
+import { api } from '../../services/api';
+import toast from 'react-hot-toast';
 
 export default function EarningsHistory() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const fetchLogs = async () => {
+    try {
+      const response = await api.get('/api/earnings/logs');
+      setData(response.data);
+    } catch (error) {
+      toast.error('Failed to load history');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const columns = useMemo(() => [
     {
@@ -30,21 +38,21 @@ export default function EarningsHistory() {
       cell: (info) => <span className="font-medium text-text">{info.getValue()}</span>
     },
     {
-      accessorKey: 'hours',
+      accessorKey: 'hours_worked',
       header: 'Hours',
       cell: (info) => `${info.getValue()}h`
     },
     {
-      accessorKey: 'gross',
+      accessorKey: 'gross_earned',
       header: 'Gross (Rs.)',
     },
     {
-      accessorKey: 'ded',
+      accessorKey: 'platform_deductions',
       header: 'Ded. (Rs.)',
       cell: (info) => <span className="text-error font-medium">-{info.getValue()}</span>
     },
     {
-      accessorKey: 'net',
+      accessorKey: 'net_received',
       header: 'Net (Rs.)',
       cell: (info) => <span className="text-success font-bold">{info.getValue()}</span>
     },
@@ -52,10 +60,11 @@ export default function EarningsHistory() {
       accessorKey: 'status',
       header: 'Status',
       cell: (info) => {
-        const val = info.getValue();
-        if (val === 'verified') return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success"><CheckCircle2 size={12}/> Verified</span>;
+        const val = info.getValue()?.toLowerCase();
+        if (val === 'confirmed' || val === 'verified') return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-success/10 text-success"><CheckCircle2 size={12}/> Confirmed</span>;
         if (val === 'pending') return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-accent/10 text-accent"><Clock size={12}/> Pending</span>;
-        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-error/10 text-error"><AlertCircle size={12}/> Disputed</span>;
+        if (val === 'discrepancy') return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-error/10 text-error"><AlertCircle size={12}/> Discrepancy</span>;
+        return <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-text-muted/10 text-text-muted"><HelpCircle size={12}/> Unverifiable</span>;
       }
     },
     {
@@ -64,16 +73,16 @@ export default function EarningsHistory() {
       cell: (info) => {
         const status = info.row.original.status;
         return status === 'pending' ? (
-          <button className="text-xs font-medium text-primary hover:text-primary-dark underline">Upload Proof</button>
+          <Link to={`/worker/earnings/${info.row.original.id}/screenshot`} className="text-xs font-medium text-primary hover:text-primary-dark underline">Upload Proof</Link>
         ) : (
-          <button className="text-xs font-medium text-text-muted hover:text-text">Details</button>
+          <Link to={`/worker/earnings/${info.row.original.id}`} className="text-xs font-medium text-text-muted hover:text-text">Details</Link>
         );
       }
     }
   ], []);
 
   const table = useReactTable({
-    data: mockData,
+    data,
     columns,
     state: {
       globalFilter,

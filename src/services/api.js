@@ -1,61 +1,66 @@
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:8000'; // Or use 192.168.8.100 as per docs, but 127.0.0.1 is standard local. Let's use env var or default to localhost
+// Base URLs from requirements
+const API_URL = import.meta.env.VITE_MAIN_API_URL || 'http://localhost:8000';
+const GRIEVANCE_URL = import.meta.env.VITE_GRIEVANCE_URL || 'http://localhost:8001';
 
-export const api = axios.create({
+const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Interceptor to attach token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
-    return config;
+// Create a separate instance for Grievance service if needed, 
+// but we'll handle the URL switch in the interceptor or per-call.
+export const grievanceApi = axios.create({
+  baseURL: GRIEVANCE_URL,
+  headers: {
+    'Content-Type': 'application/json',
   },
-  (error) => Promise.reject(error)
-);
+});
 
-// Interceptor to handle token refresh
-api.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+// Request interceptor to add token
+const addAuthToken = (config) => {
+  const token = localStorage.getItem('access_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+};
+
+api.interceptors.request.use(addAuthToken, (error) => Promise.reject(error));
+grievanceApi.interceptors.request.use(addAuthToken, (error) => Promise.reject(error));
+
+// Response interceptor for token refresh
+const handleAuthError = async (error) => {
+  const originalRequest = error.config;
+  
+  if (error.response?.status === 401 && !originalRequest._retry) {
+    originalRequest._retry = true;
     
-    // If error is 401 and we haven't retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (refreshToken) {
       try {
-        const refreshToken = localStorage.getItem('refresh_token');
-        if (!refreshToken) throw new Error('No refresh token');
-
-        // Note: Using standard fetch or a separate axios instance to avoid infinite loops
-        const response = await axios.post(`${API_URL}/api/auth/refresh?refresh_token=${refreshToken}`);
+        const response = await axios.post(
+          `${API_URL}/api/auth/refresh?refresh_token=${refreshToken}`
+        );
         
-        const { access_token, refresh_token: new_refresh_token } = response.data;
+        localStorage.setItem('access_token', response.data.access_token);
+        localStorage.setItem('refresh_token', response.data.refresh_token);
         
-        localStorage.setItem('access_token', access_token);
-        localStorage.setItem('refresh_token', new_refresh_token);
-        
-        // Update authorization header
-        originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
-        
-        return api(originalRequest);
+        originalRequest.headers.Authorization = `Bearer ${response.data.access_token}`;
+        return axios(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, logout user
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        localStorage.clear();
         window.location.href = '/signin';
-        return Promise.reject(refreshError);
       }
     }
-    
-    return Promise.reject(error);
   }
-);
+  return Promise.reject(error);
+};
+
+api.interceptors.response.use((r) => r, handleAuthError);
+grievanceApi.interceptors.response.use((r) => r, handleAuthError);
+
+export { api as default };
