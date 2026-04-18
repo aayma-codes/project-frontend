@@ -63,4 +63,4 @@ const handleAuthError = async (error) => {
 api.interceptors.response.use((r) => r, handleAuthError);
 grievanceApi.interceptors.response.use((r) => r, handleAuthError);
 
-export { api as default };
+export { api, api as default };
