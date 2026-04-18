@@ -46,7 +46,24 @@ export const useAuthStore = create((set) => ({
   login: async (email, password) => {
     set({ isLoading: true, error: null });
 
-    // Try Real Backend First
+    const lowerEmail = email.toLowerCase();
+    const demoRoles = ['worker', 'advocate', 'verifier', 'admin'];
+    const matchedRole = demoRoles.find(role => lowerEmail === `${role}@demo.com`);
+
+    // 1. ALWAYS handle demo login first to ensure competition portals work
+    if (matchedRole) {
+      const demoUser = {
+        id: 'demo-' + Date.now(),
+        full_name: `Demo ${matchedRole.charAt(0).toUpperCase() + matchedRole.slice(1)}`,
+        email: email,
+        role: matchedRole.toUpperCase()
+      };
+      localStorage.setItem('access_token', `demo_${matchedRole}`);
+      set({ user: demoUser, isAuthenticated: true, isLoading: false, error: null });
+      return { success: true, role: matchedRole.toUpperCase() };
+    }
+
+    // 2. Try Real Backend
     try {
       const response = await api.post('/api/auth/signin', { email, password });
       const { access_token, refresh_token } = response.data;
@@ -55,38 +72,19 @@ export const useAuthStore = create((set) => ({
       localStorage.setItem('refresh_token', refresh_token);
       
       const userRes = await api.get('/api/auth/me');
-      set({ user: userRes.data, isAuthenticated: true, isLoading: false });
+      set({ user: userRes.data, isAuthenticated: true, isLoading: false, error: null });
       return { success: true, role: userRes.data.role };
     } catch (error) {
-      // Fallback to DEMO LOGIN if specific demo emails are used
-      const demoRoles = ['worker', 'advocate', 'verifier', 'admin'];
-      const lowerEmail = email.toLowerCase();
-      const matchedRole = demoRoles.find(role => lowerEmail === `${role}@demo.com`);
-
-      if (matchedRole) {
-        const demoUser = {
-          id: 'demo-' + Date.now(),
-          full_name: `Demo ${matchedRole.charAt(0).toUpperCase() + matchedRole.slice(1)}`,
-          email: email,
-          role: matchedRole.toUpperCase()
-        };
-        localStorage.setItem('access_token', `demo_${matchedRole}`);
-        set({ user: demoUser, isAuthenticated: true, isLoading: false, error: null });
-        return { success: true, role: matchedRole.toUpperCase() };
-      }
-
-      set({ 
-        error: error.response?.data?.detail || 'Invalid email or password', 
-        isLoading: false 
-      });
-      return { success: false, error: error.response?.data?.detail || 'Connection failed' };
+      const errorMsg = error.response?.data?.detail || error.message || 'Connection failed';
+      set({ error: errorMsg, isLoading: false });
+      return { success: false, error: errorMsg };
     }
   },
 
   register: async (data) => {
     set({ isLoading: true, error: null });
     try {
-      // Map frontend fields to backend expected: { name, email, password, confirm_password }
+      // Map frontend fields to backend expected
       const payload = {
         name: data.name,
         email: data.email,
@@ -97,11 +95,9 @@ export const useAuthStore = create((set) => ({
       set({ isLoading: false });
       return { success: true };
     } catch (error) {
-      set({ 
-        error: error.response?.data?.detail || 'Registration failed', 
-        isLoading: false 
-      });
-      return { success: false, error: error.response?.data?.detail };
+      const errorMsg = error.response?.data?.detail || error.message || 'Registration failed';
+      set({ error: errorMsg, isLoading: false });
+      return { success: false, error: errorMsg };
     }
   },
 

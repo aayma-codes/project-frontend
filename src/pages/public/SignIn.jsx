@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
@@ -7,23 +8,26 @@ import { Mail, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SignIn() {
-  const { login, isLoading } = useAuthStore();
+  const { user, isAuthenticated, login, isLoading } = useAuthStore();
   const navigate = useNavigate();
   
   const { register, handleSubmit, formState: { errors } } = useForm();
+
+  // Handle redirect if already logged in or just logged in
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const role = user.role?.toLowerCase();
+      if (role) {
+        navigate(`/${role}/dashboard`, { replace: true });
+      }
+    }
+  }, [isAuthenticated, user, navigate]);
   
   const onSubmit = async (data) => {
     const response = await login(data.email, data.password);
     if (response.success) {
       toast.success('Signed in successfully!');
-      
-      // Redirect based on role
-      const role = response.role?.toLowerCase();
-      if (role) {
-        navigate(`/${role}/dashboard`);
-      } else {
-        navigate('/worker/dashboard'); // Fallback
-      }
+      // Redirection is handled by the useEffect above
     } else {
       toast.error(response.error || 'Invalid credentials');
     }
@@ -31,6 +35,13 @@ export default function SignIn() {
 
   return (
     <div>
+      <div className="flex items-center gap-3 mb-8 lg:hidden">
+        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
+          <img src="/src/assets/logo.png" alt="Logo" className="w-6 h-6 brightness-0 invert" />
+        </div>
+        <h1 className="text-2xl font-display font-bold text-primary tracking-tighter">KamaiKitab</h1>
+      </div>
+
       <div className="mb-8">
         <h2 className="text-3xl font-display font-bold text-text mb-2">Welcome Back</h2>
         <p className="text-text-muted">Sign in to track your earnings and access your dashboard.</p>
