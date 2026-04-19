@@ -59,7 +59,7 @@ export default function WorkerDashboard() {
         <div>
           <p className="text-text-muted text-sm font-medium mb-1">{greeting}, 👋</p>
           <h1 className="text-3xl font-display font-bold text-text">
-            {user?.name || 'Worker'}
+            {user?.full_name || user?.name || 'Worker'}
           </h1>
           <p className="text-text-muted mt-1">Here's your earnings overview for this week.</p>
         </div>

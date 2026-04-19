@@ -50,7 +50,10 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/signin" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user?.role)) {
+  const userRole = user?.role?.toUpperCase();
+  const rolesToMatch = allowedRoles?.map(r => r.toUpperCase());
+
+  if (rolesToMatch && !rolesToMatch.includes(userRole)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -59,12 +62,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 const DashboardRedirect = () => {
   const { user } = useAuthStore();
-  const role = user?.role?.toLowerCase();
+  const role = user?.role?.toUpperCase();
   
-  if (role === 'worker') return <Navigate to="/worker/dashboard" replace />;
-  if (role === 'verifier') return <Navigate to="/verifier/dashboard" replace />;
-  if (role === 'advocate') return <Navigate to="/advocate/dashboard" replace />;
-  if (role === 'admin') return <Navigate to="/admin/dashboard" replace />;
+  if (role === 'WORKER') return <Navigate to="/worker/dashboard" replace />;
+  if (role === 'VERIFIER') return <Navigate to="/verifier/dashboard" replace />;
+  if (role === 'ADVOCATE') return <Navigate to="/advocate/dashboard" replace />;
+  if (role === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
   
   return <Navigate to="/" replace />;
 };

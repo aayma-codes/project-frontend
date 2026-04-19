@@ -4,6 +4,7 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { useReactTable, getCoreRowModel, flexRender, getPaginationRowModel, getFilteredRowModel } from '@tanstack/react-table';
 import { FileDown, Search, Filter, CheckCircle2, AlertCircle, Clock, HelpCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import toast from 'react-hot-toast';
 
@@ -12,6 +13,13 @@ export default function EarningsHistory() {
   const [loading, setLoading] = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
 
+  const fallbackData = [
+    { id: 101, date: '2026-04-18', platform: 'FoodPanda', hours_worked: 5.5, gross_earned: 3500, platform_deductions: 400, net_received: 3100, status: 'verified' },
+    { id: 102, date: '2026-04-17', platform: 'InDrive', hours_worked: 4.0, gross_earned: 3000, platform_deductions: 600, net_received: 2400, status: 'pending' },
+    { id: 103, date: '2026-04-16', platform: 'Bykea', hours_worked: 6.0, gross_earned: 2800, platform_deductions: 280, net_received: 2520, status: 'verified' },
+    { id: 104, date: '2026-04-15', platform: 'FoodPanda', hours_worked: 4.5, gross_earned: 2900, platform_deductions: 350, net_received: 2550, status: 'discrepancy' },
+  ];
+
   useEffect(() => {
     fetchLogs();
   }, []);
@@ -19,12 +27,30 @@ export default function EarningsHistory() {
   const fetchLogs = async () => {
     try {
       const response = await api.get('/api/earnings/logs');
-      setData(response.data);
+      setData(response.data?.length > 0 ? response.data : fallbackData);
     } catch (error) {
-      toast.error('Failed to load history');
+      setData(fallbackData);
+      toast.error('Connect backend for live logs. Showing demo data.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleExportCSV = () => {
+    if (!data.length) return;
+    const headers = ['Date', 'Platform', 'Hours', 'Gross', 'Deductions', 'Net', 'Status'];
+    const rows = data.map(r => [r.date, r.platform, r.hours_worked, r.gross_earned, r.platform_deductions, r.net_received, r.status]);
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "KamaiKitab_Earnings_History.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('CSV exported successfully!');
   };
 
   const columns = useMemo(() => [
@@ -100,7 +126,7 @@ export default function EarningsHistory() {
           <h1 className="text-3xl font-display font-bold text-text">Earnings History</h1>
           <p className="text-text-muted">A complete record of all your logged shifts.</p>
         </div>
-        <Button variant="outline" className="w-full sm:w-auto bg-surface">
+        <Button onClick={handleExportCSV} variant="outline" className="w-full sm:w-auto bg-surface">
           <FileDown size={18} className="mr-2" />
           Export CSV
         </Button>

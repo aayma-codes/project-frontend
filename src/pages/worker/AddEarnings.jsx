@@ -9,7 +9,7 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { UploadCloud, FileImage, X, Save, Calculator, FileSpreadsheet, CheckCircle2, AlertCircle, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const REQUIRED_CSV_HEADERS = ['platform', 'date', 'hours_worked', 'gross_earned', 'platform_deductions', 'net_received'];
 

@@ -48,7 +48,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
-              <img src="/src/assets/logo.png" alt="K" className="w-6 h-6 brightness-0 invert" />
+              <img src="/logo.png" alt="K" className="w-6 h-6 brightness-0 invert" />
             </div>
             <span className="text-2xl lg:text-3xl font-display font-bold text-primary tracking-tighter">KamaiKitab</span>
           </Link>

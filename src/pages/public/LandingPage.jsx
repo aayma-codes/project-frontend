@@ -70,63 +70,170 @@ export default function LandingPage() {
     <div ref={containerRef} className="flex flex-col items-center w-full overflow-x-hidden bg-[#FFFBFA]">
 
       {/* ── HERO ── */}
-      <section className="w-full relative min-h-[90vh] flex items-center pt-24 pb-20">
+      <section className="w-full relative min-h-[95vh] flex items-center pt-24 pb-20 overflow-hidden">
+        {/* Animated Background Elements */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 -left-20 w-96 h-96 bg-primary/5 rounded-full blur-[100px]" />
-          <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-accent/5 rounded-full blur-[100px]" />
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 90, 0],
+            }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute top-1/4 -left-20 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px]" 
+          />
+          <motion.div 
+            animate={{ 
+              scale: [1.2, 1, 1.2],
+              rotate: [0, -90, 0],
+            }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute bottom-1/4 -right-20 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[140px]" 
+          />
         </div>
 
         <div className="container mx-auto px-6 lg:px-16 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="text-6xl lg:text-8xl font-display font-bold leading-[0.95] mb-8 tracking-tighter text-text"
-            >
-              The Power of <br />
-              <span className="text-primary italic">Verified</span> Earnings.
-            </motion.h1>
+          <div className="flex flex-col lg:flex-row items-center gap-16 lg:gap-8">
+            {/* Text Side */}
+            <div className="flex-1 text-center lg:text-left">
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <h1 className="text-6xl lg:text-[100px] font-display font-bold leading-[0.9] mb-8 tracking-tighter text-text">
+                  The Power of <br />
+                  <span className="text-primary italic relative inline-block">
+                    Verified
+                    <motion.svg 
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 1, delay: 0.5 }}
+                      className="absolute -bottom-2 left-0 w-full h-4 text-accent/30" viewBox="0 0 300 12" fill="none"
+                    >
+                      <path d="M5 7C50 7 150 2 295 7" stroke="currentColor" strokeWidth="8" strokeLinecap="round"/>
+                    </motion.svg>
+                  </span> Earnings.
+                </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1 }}
-              className="text-xl lg:text-2xl text-text-muted mb-12 max-w-2xl mx-auto leading-relaxed font-medium"
-            >
-              KamaiKitab empowers Pakistan's gig workforce to track, verify, and leverage their income data for a fairer future.
-            </motion.p>
+                <p className="text-xl lg:text-2xl text-text-muted mb-12 max-w-2xl lg:mx-0 mx-auto leading-relaxed font-medium">
+                  KamaiKitab empowers Pakistan's gig workforce to track, verify, and leverage their income data for a fairer future.
+                </p>
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-6"
-            >
-              <Link to="/signup">
-                <Button size="lg" className="px-10 py-8 text-xl rounded-full shadow-2xl shadow-primary/30 group">
-                  Start Your Journey
-                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-            </motion.div>
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-6">
+                  <Link to="/signup">
+                    <Button size="lg" className="px-10 py-8 text-xl rounded-full shadow-2xl shadow-primary/30 group">
+                      Start Your Journey
+                      <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                  <div className="flex -space-x-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="w-12 h-12 rounded-full border-4 border-white bg-background overflow-hidden">
+                        <img src={`https://i.pravatar.cc/150?u=${i + 10}`} alt="User" />
+                      </div>
+                    ))}
+                    <div className="w-12 h-12 rounded-full border-4 border-white bg-primary text-white flex items-center justify-center text-xs font-bold">
+                      +10k
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              className="mt-16 flex items-center justify-center gap-12 grayscale opacity-50 overflow-hidden"
-            >
-               {/* Platform Icons placeholder */}
-               <div className="flex gap-16 animate-marquee whitespace-nowrap">
-                  <span className="text-2xl font-bold tracking-widest">FOODPANDA</span>
-                  <span className="text-2xl font-bold tracking-widest">INDRIVE</span>
-                  <span className="text-2xl font-bold tracking-widest">BYKEA</span>
-                  <span className="text-2xl font-bold tracking-widest">CAREEM</span>
-                  <span className="text-2xl font-bold tracking-widest">UBER</span>
-               </div>
-            </motion.div>
+            {/* Visual Side — OUTSTANDING ROTATING EFFECT */}
+            <div className="flex-1 relative w-full max-w-[600px] aspect-square flex items-center justify-center">
+              {/* Rotating Outer Circle */}
+              <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-0 border-[1px] border-dashed border-primary/20 rounded-full"
+              />
+              
+              {/* Secondary Rotating Circle */}
+              <motion.div 
+                animate={{ rotate: -360 }}
+                transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                className="absolute inset-12 border-[1px] border-dashed border-accent/20 rounded-full"
+              />
+
+              {/* Floating Platform Icons in Circle */}
+              {[
+                { Icon: ShieldCheck, color: '#2D5016', delay: 0 },
+                { Icon: TrendingUp, color: '#8B6914', delay: 10 },
+                { Icon: Smartphone, color: '#2D5016', delay: 20 },
+                { Icon: MapPin, color: '#8B6914', delay: 30 },
+              ].map((item, i) => (
+                <motion.div
+                  key={i}
+                  animate={{ 
+                    rotate: 360,
+                  }}
+                  transition={{ duration: 40, repeat: Infinity, ease: "linear", delay: -item.delay }}
+                  className="absolute inset-0 pointer-events-none"
+                >
+                  <motion.div 
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 40, repeat: Infinity, ease: "linear", delay: -item.delay }}
+                    className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-2xl shadow-xl border border-border/50 flex items-center justify-center text-primary pointer-events-auto hover:scale-125 transition-transform duration-300"
+                    style={{ color: item.color }}
+                  >
+                    <item.Icon size={32} />
+                  </motion.div>
+                </motion.div>
+              ))}
+
+              {/* Central Outstanding 3D Image */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1 }}
+                className="relative z-20 w-4/5 h-4/5 flex items-center justify-center"
+              >
+                <motion.img
+                  animate={{ 
+                    y: [0, -20, 0],
+                  }}
+                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                  src="/gig_worker_final.png"
+                  alt="KamaiKitab Delivery"
+                  className="w-full h-auto drop-shadow-[0_40px_60px_rgba(45,80,22,0.15)] relative z-10"
+                />
+              </motion.div>
+
+              {/* Floating Badge */}
+              <motion.div
+                animate={{ x: [0, 10, 0], y: [0, -15, 0] }}
+                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-10 right-0 bg-white p-4 rounded-2xl shadow-2xl border border-border/50 z-30"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center text-success">
+                    <Zap size={20} fill="currentColor" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold uppercase text-text-muted">Live Tracking</p>
+                    <p className="text-sm font-bold">99.9% Uptime</p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="mt-20 flex items-center justify-center gap-12 grayscale opacity-50 overflow-hidden"
+          >
+             <div className="flex gap-16 animate-marquee whitespace-nowrap">
+                {['FOODPANDA', 'INDRIVE', 'BYKEA', 'CAREEM', 'UBER'].map(p => (
+                  <span key={p} className="text-2xl font-bold tracking-[0.3em]">{p}</span>
+                ))}
+                {['FOODPANDA', 'INDRIVE', 'BYKEA', 'CAREEM', 'UBER'].map(p => (
+                  <span key={p + '_2'} className="text-2xl font-bold tracking-[0.3em]">{p}</span>
+                ))}
+             </div>
+          </motion.div>
         </div>
       </section>
       {/* ── FEATURES ── */}
@@ -220,7 +327,7 @@ export default function LandingPage() {
             <div className="relative group">
               <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               <img
-                src="/src/assets/mobile_mockup_premium.png"
+                src="/mobile_mockup_premium.png"
                 alt="KamaiKitab Premium App"
                 className="w-full max-w-[420px] drop-shadow-[0_40px_60px_rgba(0,0,0,0.12)] hover:scale-[1.02] transition-transform duration-500 cursor-pointer"
               />
@@ -304,7 +411,7 @@ export default function LandingPage() {
             <div className="col-span-1 lg:col-span-2">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-                  <img src="/src/assets/logo.png" alt="K" className="w-6 h-6 brightness-0 invert" />
+                  <img src="/logo.png" alt="K" className="w-6 h-6 brightness-0 invert" />
                 </div>
                 <span className="text-3xl font-display font-bold tracking-tighter">KamaiKitab</span>
               </div>

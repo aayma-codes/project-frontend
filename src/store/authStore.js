@@ -133,6 +133,15 @@ export const useAuthStore = create((set) => ({
       return { success: false, error: error.response?.data?.detail };
     }
   },
+
+  changePassword: async (current_password, new_password, confirm_password) => {
+    try {
+      await api.post('/api/auth/change-password', { current_password, new_password, confirm_password });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.response?.data?.detail || 'Failed to change password' };
+    }
+  },
   
   clearError: () => set({ error: null })
 }));

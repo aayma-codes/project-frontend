@@ -1,18 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { Layers, ChevronUp, Tag, Clock, CheckCircle2, Users, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-const allGrievances = [
-  { id: 1, platform: 'FoodPanda', category: 'Sudden Rate Cut', title: 'Base fare cut from Rs.60 to Rs.40 overnight', city: 'Lahore', upvotes: 47, status: 'open', workers: 12 },
-  { id: 2, platform: 'FoodPanda', category: 'Sudden Rate Cut', title: 'Delivery bonus removed without announcement', city: 'Lahore', upvotes: 38, status: 'open', workers: 8 },
-  { id: 3, platform: 'FoodPanda', category: 'Unfair Deduction', title: 'Penalty deducted for customer cancellations I didn\'t cause', city: 'Karachi', upvotes: 29, status: 'escalated', workers: 5 },
-  { id: 4, platform: 'InDrive', category: 'Sudden Rate Cut', title: 'Peak multiplier reduced to 1.1x across all zones', city: 'Lahore', upvotes: 55, status: 'open', workers: 20 },
-  { id: 5, platform: 'Careem', category: 'Account Suspended', title: 'Account deactivated with no explanation after 3 years', city: 'Karachi', upvotes: 112, status: 'escalated', workers: 3 },
-  { id: 6, platform: 'Bykea', category: 'Unfair Deduction', title: 'Commission jumped from 20% to 28% this month', city: 'Islamabad', upvotes: 22, status: 'resolved', workers: 6 },
-];
+import { grievanceApi } from '../../services/api';
 
 const STATUS_CONFIG = {
   open: { label: 'Open', color: 'bg-accent/10 text-accent border-accent/20', dot: 'bg-accent' },
@@ -34,14 +26,49 @@ const clusters = [
 ];
 
 export default function AdvocateGrievances() {
-  const [grievances, setGrievances] = useState(allGrievances);
+  const [grievances, setGrievances] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('All');
   const [filterPlatform, setFilterPlatform] = useState('All');
   const [selectedCluster, setSelectedCluster] = useState(null);
 
-  const updateStatus = (id, newStatus) => {
-    setGrievances(g => g.map(item => item.id === id ? { ...item, status: newStatus } : item));
-    toast.success(`Grievance marked as "${newStatus}"`);
+  useEffect(() => {
+    fetchGrievances();
+  }, []);
+
+  const fetchGrievances = async () => {
+    try {
+      const response = await grievanceApi.get('/api/grievances');
+      setGrievances(response.data);
+    } catch (error) {
+      toast.error('Failed to load grievances');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateStatus = async (id, newStatus) => {
+    try {
+      if (newStatus === 'escalated') {
+        await grievanceApi.post(`/api/grievances/${id}/escalate`);
+      } else if (newStatus === 'resolved') {
+        await grievanceApi.put(`/api/grievances/${id}/resolve`, { resolution_notes: 'Issue resolved by advocate' });
+      }
+      toast.success(`Grievance marked as "${newStatus}"`);
+      fetchGrievances();
+    } catch (error) {
+      toast.error('Failed to update status');
+    }
+  };
+
+  const handleCluster = async () => {
+    try {
+      await grievanceApi.post('/api/grievances/cluster');
+      toast.success('Grievances clustered successfully');
+      fetchGrievances();
+    } catch (error) {
+      toast.error('Failed to cluster grievances');
+    }
   };
 
   const filtered = grievances.filter(g => {

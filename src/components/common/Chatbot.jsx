@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Bot, User, Minimize2 } from 'lucide-react';
+import { MessageSquare, X, Send, Bot, Minimize2 } from 'lucide-react';
 import Button from './Button';
+import { api } from '../../services/api';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -9,7 +11,24 @@ export default function Chatbot() {
     { role: 'bot', content: "Hello! I'm KamaiBot. How can I help you today with your earnings or platform grievances?" }
   ]);
   const [input, setInput] = useState('');
+  const [sessionId, setSessionId] = useState(null);
   const scrollRef = useRef(null);
+  const { user } = useAuthStore();
+
+  useEffect(() => {
+    if (isOpen && !sessionId && user) {
+      createSession();
+    }
+  }, [isOpen, sessionId, user]);
+
+  const createSession = async () => {
+    try {
+      const res = await api.post('/api/chat/sessions', { title: `Chat with ${user.name}` });
+      setSessionId(res.data.id);
+    } catch (error) {
+      console.error('Failed to create chat session');
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -17,22 +36,35 @@ export default function Chatbot() {
     }
   }, [messages]);
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
     const userMsg = { role: 'user', content: input };
     setMessages(prev => [...prev, userMsg]);
+    const currentInput = input.toLowerCase();
     setInput('');
 
-    // Mock bot response
-    setTimeout(() => {
-      let botContent = "I'm not sure about that. Try asking about your income certificate or how to report a rate cut!";
-      if (input.toLowerCase().includes('certificate')) botContent = "You can generate your Income Certificate in the 'Worker Dashboard' after logging your earnings!";
-      if (input.toLowerCase().includes('rate')) botContent = "If you notice a sudden rate cut, please post it on the 'Grievance Board' anonymously so our advocates can track it.";
-      
-      setMessages(prev => [...prev, { role: 'bot', content: botContent }]);
-    }, 1000);
+    // Demo responses for when backend is down or no session
+    if (!sessionId) {
+      setTimeout(() => {
+        let botReply = "I'm in demo mode right now. Once the backend is connected, I can help you with real data!";
+        if (currentInput.includes('hello') || currentInput.includes('hi')) botReply = "Hello! How can I help you explore KamaiKitab today?";
+        if (currentInput.includes('earnings')) botReply = "You can track your earnings from FoodPanda, Bykea, and InDrive in the Worker Portal.";
+        if (currentInput.includes('certificate')) botReply = "Our Income Certificates are verified by community peers and can be used for bank loans or rent.";
+        if (currentInput.includes('grievance')) botReply = "You can report unfair deactivations anonymously through our Grievance Board.";
+        
+        setMessages(prev => [...prev, { role: 'bot', content: botReply }]);
+      }, 600);
+      return;
+    }
+
+    try {
+      const res = await api.post(`/api/chat/sessions/${sessionId}/messages`, { content: input });
+      setMessages(prev => [...prev, { role: 'bot', content: res.data.content || "I'm processing your request." }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'bot', content: "Sorry, I'm having trouble connecting to the live server. But I'm here to help with general info!" }]);
+    }
   };
 
   return (

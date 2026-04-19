@@ -1,18 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { ShieldCheck, Clock, FileImage, Search, AlertCircle, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-// Mock Data
-const pendingReviews = [
-  { id: '102', worker: 'Ahmad Khan', platform: 'InDrive', date: '2026-04-17', gross: 3000, ded: 600, net: 2400, submitted: '2 hours ago' },
-  { id: '107', worker: 'Bilal Ahmed', platform: 'Careem', date: '2026-04-12', gross: 2500, ded: 500, net: 2000, submitted: '5 hours ago' },
-  { id: '109', worker: 'Zainab Ali', platform: 'FoodPanda', date: '2026-04-18', gross: 4200, ded: 420, net: 3780, submitted: '1 day ago' },
-];
+import { api } from '../../services/api';
+import toast from 'react-hot-toast';
 
 export default function VerifierDashboard() {
+  const [pendingReviews, setPendingReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchPending();
+  }, []);
+
+  const fetchPending = async () => {
+    try {
+      const response = await api.get('/api/earnings/pending-verifications');
+      setPendingReviews(response.data);
+    } catch (error) {
+      toast.error('Failed to load verification queue');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center font-display text-text-muted">Loading queue...</div>;
 
   return (
     <div className="space-y-6">

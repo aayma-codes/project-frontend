@@ -4,7 +4,7 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import { Download, Printer, ShieldCheck, CalendarRange, Share2, CheckCircle2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
 
@@ -17,17 +17,32 @@ export default function Certificate() {
     if (!certificateRef.current) return;
     setIsGenerating(true);
     try {
+      // Add a tiny delay to ensure all fonts and styles are fully painted
+      await new Promise(r => setTimeout(r, 800));
+      
       const canvas = await html2canvas(certificateRef.current, {
         scale: 2,
         backgroundColor: '#FFFFFF',
         useCORS: true,
+        allowTaint: true,
+        logging: true, // Enable logging for debugging if it still fails
       });
+
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'px', format: [canvas.width / 2, canvas.height / 2] });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2);
-      pdf.save(`KamaiKitab_Certificate_${user?.name?.replace(/\s+/g, '_') || 'Worker'}.pdf`);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      
+      const fileName = `KamaiKitab_Certificate_${user?.full_name?.replace(/\s+/g, '_') || user?.name?.replace(/\s+/g, '_') || 'Worker'}.pdf`;
+      pdf.save(fileName);
+      
       toast.success('PDF downloaded successfully!');
     } catch (error) {
+      console.error('PDF Generation Error:', error);
       toast.error('Failed to generate PDF. Please try again.');
     } finally {
       setIsGenerating(false);
@@ -101,9 +116,9 @@ export default function Certificate() {
           style={{ fontFamily: 'Inter, sans-serif', color: '#1A1A0F' }}
         >
           {/* Certificate Header */}
-          <div className="flex justify-between items-start border-b-2 border-[#2D5016] pb-8 mb-8">
+          <div className="flex justify-between items-start pb-8 mb-8" style={{ borderBottom: '2px solid #2D5016' }}>
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-[#2D5016] rounded-xl flex items-center justify-center text-white font-bold text-2xl">K</div>
+              <div style={{ width: '56px', height: '56px', backgroundColor: '#2D5016', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyCenter: 'center', color: '#FFFFFF', fontWeight: 700, fontSize: '24px' }}>K</div>
               <div>
                 <h1 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '28px', fontWeight: 700, color: '#2D5016', margin: 0 }}>
                   KamaiKitab
@@ -128,7 +143,7 @@ export default function Certificate() {
           <div className="grid grid-cols-2 gap-8 mb-10">
             <div>
               <p style={{ fontSize: '11px', color: '#6B6B5A', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '6px' }}>Issued To</p>
-              <p style={{ fontSize: '22px', fontWeight: 700, color: '#1A1A0F', marginBottom: '4px' }}>{user?.name || 'Ahmad Khan'}</p>
+              <p style={{ fontSize: '22px', fontWeight: 700, color: '#1A1A0F', marginBottom: '4px' }}>{user?.full_name || user?.name || 'Ahmad Khan'}</p>
               <p style={{ fontSize: '13px', color: '#6B6B5A' }}>{user?.email || 'ahmad.khan@example.com'}</p>
               <p style={{ fontSize: '13px', color: '#6B6B5A', marginTop: '4px' }}>Category: {certData.workerCategory}</p>
               <p style={{ fontSize: '13px', color: '#6B6B5A' }}>Platforms: {certData.platforms.join(', ')}</p>

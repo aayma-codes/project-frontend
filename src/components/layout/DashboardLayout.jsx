@@ -80,7 +80,7 @@ export default function DashboardLayout() {
         }`}
       >
         <div className="p-6 flex items-center gap-3 border-b border-border/50">
-          <img src="/src/assets/logo.png" alt="Logo" className="w-8 h-8" />
+          <img src="/logo.png" alt="Logo" className="w-8 h-8" />
           <span className="text-xl font-display font-bold text-primary tracking-tight">KamaiKitab</span>
           <button 
             onClick={() => setSidebarOpen(false)}
@@ -138,7 +138,7 @@ export default function DashboardLayout() {
         {/* Mobile Header */}
         <header className="lg:hidden bg-surface border-b border-border/50 px-4 py-3 flex items-center justify-between z-30">
           <div className="flex items-center gap-2">
-            <img src="/src/assets/logo.png" alt="Logo" className="w-8 h-8" />
+            <img src="/logo.png" alt="Logo" className="w-8 h-8" />
             <span className="text-lg font-display font-bold text-primary">KamaiKitab</span>
           </div>
           <button 

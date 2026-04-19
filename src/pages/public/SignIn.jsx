@@ -37,7 +37,7 @@ export default function SignIn() {
     <div>
       <div className="flex items-center gap-3 mb-8 lg:hidden">
         <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg">
-          <img src="/src/assets/logo.png" alt="Logo" className="w-6 h-6 brightness-0 invert" />
+          <img src="/logo.png" alt="Logo" className="w-6 h-6 brightness-0 invert" />
         </div>
         <h1 className="text-2xl font-display font-bold text-primary tracking-tighter">KamaiKitab</h1>
       </div>

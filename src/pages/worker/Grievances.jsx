@@ -9,7 +9,13 @@ import {
 import { grievanceApi } from '../../services/api';
 import toast from 'react-hot-toast';
 
-// ... categories and platforms stay same ...
+const PLATFORMS = ['FoodPanda', 'InDrive', 'Bykea', 'Careem', 'Uber', 'Other'];
+const CATEGORIES = [
+  { label: 'Sudden Rate Cut', icon: TrendingDown, color: 'text-error bg-error/10 border-error/20' },
+  { label: 'Unfair Deduction', icon: AlertTriangle, color: 'text-warning bg-warning/10 border-warning/20' },
+  { label: 'Account Suspended', icon: Ban, color: 'text-error bg-error/10 border-error/20' },
+  { label: 'Rate Intelligence', icon: Star, color: 'text-accent bg-accent/10 border-accent/20' },
+];
 
 export default function Grievances() {
   const [posts, setPosts] = useState([]);
@@ -17,7 +23,7 @@ export default function Grievances() {
   const [showModal, setShowModal] = useState(false);
   const [filterPlatform, setFilterPlatform] = useState('All');
   const [filterCategory, setFilterCategory] = useState('All');
-  const [form, setForm] = useState({ platform: '', category: '', title: '', description: '', city: '' });
+  const [form, setForm] = useState({ platform: '', category: '', title: '', body: '', city: '' });
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -44,7 +50,7 @@ export default function Grievances() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.platform || !form.category || !form.title || !form.description) {
+    if (!form.platform || !form.category || !form.title || !form.body) {
       toast.error('Please fill all required fields.');
       return;
     }
@@ -54,12 +60,12 @@ export default function Grievances() {
         platform: form.platform,
         category: form.category,
         title: form.title,
-        description: form.description,
+        description: form.body, // Mapping 'body' to 'description' for API
         city: form.city
       });
       toast.success('Your grievance has been posted anonymously.');
       setShowModal(false);
-      setForm({ platform: '', category: '', title: '', description: '', city: '' });
+      setForm({ platform: '', category: '', title: '', body: '', city: '' });
       fetchGrievances();
     } catch (error) {
       toast.error('Failed to post grievance');
